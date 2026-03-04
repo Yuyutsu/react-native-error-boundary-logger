@@ -12,6 +12,8 @@ import {
 import { buildErrorContext } from './errorContext';
 import { logError } from './logger';
 
+const LOG_PREFIX = '[ErrorBoundaryLogger]';
+
 /**
  * A React Error Boundary that catches rendering errors, logs detailed
  * diagnostic information, and renders a safe fallback UI.
@@ -19,6 +21,9 @@ import { logError } from './logger';
  * @example
  * <ErrorBoundaryLogger
  *   screenName="HomeScreen"
+ *   dedupeWindowMs={5000}
+ *   maxErrorsPerMinute={10}
+ *   debug
  *   fallback={(reset) => <Button title="Try again" onPress={reset} />}
  *   onError={(error, info, context) => sendToServer(error, context)}
  * >
@@ -29,6 +34,13 @@ export class ErrorBoundaryLogger extends React.Component<
   ErrorBoundaryLoggerProps,
   ErrorBoundaryLoggerState
 > {
+  // Instance variables for dedup / rate-limit — not state because they do
+  // not affect rendering.
+  private _lastSignature: string | null = null;
+  private _lastErrorTime: number = 0;
+  private _errorCount: number = 0;
+  private _windowStart: number = 0;
+
   constructor(props: ErrorBoundaryLoggerProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -43,11 +55,66 @@ export class ErrorBoundaryLogger extends React.Component<
 
   componentDidCatch(error: Error, info: React.ErrorInfo): void {
     try {
-      const context = buildErrorContext(this.props.screenName);
-      if (this.props.onError !== undefined) {
-        this.props.onError(error, info, context);
+      const { dedupeWindowMs, maxErrorsPerMinute, debug, logAsync } =
+        this.props;
+
+      // ── Error deduplication ─────────────────────────────────────────────
+      if (dedupeWindowMs !== undefined) {
+        const signature = error.message + (info.componentStack ?? '');
+        const now = Date.now();
+        if (
+          signature === this._lastSignature &&
+          now - this._lastErrorTime < dedupeWindowMs
+        ) {
+          if (debug === true) {
+            console.log(
+              LOG_PREFIX,
+              'Duplicate error suppressed within dedupeWindowMs'
+            );
+          }
+          return;
+        }
+        this._lastSignature = signature;
+        this._lastErrorTime = now;
+      }
+
+      // ── Rate limiting ───────────────────────────────────────────────────
+      if (maxErrorsPerMinute !== undefined) {
+        const now = Date.now();
+        if (now - this._windowStart > 60_000) {
+          this._windowStart = now;
+          this._errorCount = 0;
+        }
+        if (this._errorCount >= maxErrorsPerMinute) {
+          if (debug === true) {
+            console.log(LOG_PREFIX, 'Rate limit exceeded, error dropped');
+          }
+          return;
+        }
+        this._errorCount++;
+      }
+
+      // ── Build context ───────────────────────────────────────────────────
+      const context = buildErrorContext(this.props.screenName, 'UI_ERROR');
+
+      if (debug === true) {
+        console.log(LOG_PREFIX, 'Captured error:', error.message);
+        console.log(LOG_PREFIX, 'Sending to logger');
+      }
+
+      // ── Dispatch to logger ──────────────────────────────────────────────
+      const doLog = (): void => {
+        if (this.props.onError !== undefined) {
+          this.props.onError(error, info, context);
+        } else {
+          logError(error, context);
+        }
+      };
+
+      if (logAsync === true) {
+        setTimeout(doLog, 0);
       } else {
-        logError(error, context);
+        doLog();
       }
     } catch {
       // Never allow error reporting to throw and crash the boundary

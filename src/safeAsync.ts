@@ -6,6 +6,8 @@ import { logError } from './logger';
  * to the global logger. React error boundaries do not catch async errors;
  * use this utility to bridge that gap.
  *
+ * Caught errors are classified as `ASYNC_ERROR` in the `ErrorContext`.
+ *
  * @returns The resolved value, or `undefined` if the function threw.
  *
  * @example
@@ -21,7 +23,7 @@ export async function safeAsync<T>(
   } catch (err: unknown) {
     const error =
       err instanceof Error ? err : new Error(String(err));
-    const context = buildErrorContext();
+    const context = buildErrorContext(undefined, 'ASYNC_ERROR');
     logError(error, context);
     return undefined;
   }

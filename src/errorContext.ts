@@ -1,5 +1,8 @@
 import { Platform } from 'react-native';
-import { ErrorContext } from './types';
+import { ErrorContext, ErrorType } from './types';
+import { getErrorMetadata } from './metadata';
+import { getBreadcrumbs } from './breadcrumbs';
+import { getSnapshot } from './snapshot';
 
 let _appVersion: string | undefined;
 
@@ -24,9 +27,13 @@ function getDeviceModel(): string | undefined {
 }
 
 /**
- * Builds an ErrorContext object with device and environment information.
+ * Builds an ErrorContext object with device and environment information,
+ * including any metadata, breadcrumbs, and snapshot that have been set.
  */
-export function buildErrorContext(screenName?: string): ErrorContext {
+export function buildErrorContext(
+  screenName?: string,
+  errorType?: ErrorType
+): ErrorContext {
   const context: ErrorContext = {
     timestamp: Date.now(),
     platform: Platform.OS,
@@ -36,6 +43,25 @@ export function buildErrorContext(screenName?: string): ErrorContext {
 
   if (screenName !== undefined) {
     context.screenName = screenName;
+  }
+
+  if (errorType !== undefined) {
+    context.errorType = errorType;
+  }
+
+  const metadata = getErrorMetadata();
+  if (Object.keys(metadata).length > 0) {
+    context.metadata = metadata;
+  }
+
+  const breadcrumbs = getBreadcrumbs();
+  if (breadcrumbs.length > 0) {
+    context.breadcrumbs = breadcrumbs;
+  }
+
+  const snapshot = getSnapshot();
+  if (snapshot !== undefined) {
+    context.snapshot = snapshot;
   }
 
   return context;

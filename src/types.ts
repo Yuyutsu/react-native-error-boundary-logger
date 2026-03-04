@@ -1,6 +1,10 @@
 import React from 'react';
 
-export type ErrorType = 'UI_ERROR' | 'ASYNC_ERROR' | 'NETWORK_ERROR' | 'UNKNOWN';
+export type ErrorType =
+  | 'UI_ERROR'       // Thrown during React component rendering (caught by ErrorBoundaryLogger)
+  | 'ASYNC_ERROR'    // Thrown inside an async function wrapped with safeAsync
+  | 'NETWORK_ERROR'  // Use this when logging network-layer errors via the global logger
+  | 'UNKNOWN';       // Caught by the global JS error handler or an unclassified source
 
 export interface Breadcrumb {
   type: string;

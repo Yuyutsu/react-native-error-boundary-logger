@@ -677,7 +677,8 @@ describe('Global JS error handler', () => {
       e: Error,
       isFatal?: boolean
     ) => void;
-    installedHandler(new Error('forward test'), true);
-    expect(mockPreviousHandler).toHaveBeenCalledWith(new Error('forward test'), true);
+    const testError = new Error('forward test');
+    installedHandler(testError, true);
+    expect(mockPreviousHandler).toHaveBeenCalledWith(testError, true);
   });
 });

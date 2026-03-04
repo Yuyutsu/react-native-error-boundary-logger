@@ -15,7 +15,7 @@ export function addBreadcrumb(
 ): void {
   _breadcrumbs.push({ ...breadcrumb, timestamp: Date.now() });
   if (_breadcrumbs.length > MAX_BREADCRUMBS) {
-    _breadcrumbs = _breadcrumbs.slice(_breadcrumbs.length - MAX_BREADCRUMBS);
+    _breadcrumbs.shift();
   }
 }
 

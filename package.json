@@ -1,26 +1,44 @@
 {
   "name": "react-native-error-boundary-logger",
   "version": "1.0.0",
-  "description": "A production-ready React Native Error Boundary with built-in logging utilities",
+  "description": "A production-ready React Native Error Boundary with built-in logging utilities — deduplication, rate-limiting, breadcrumbs, metadata, snapshots, and a global JS error handler",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "files": [
-    "lib"
+    "lib",
+    "LICENSE",
+    "Readme.md"
   ],
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run lint && npm run build && npm test"
   },
   "keywords": [
     "react-native",
     "error-boundary",
-    "logging",
+    "error-logging",
     "crash-reporting",
-    "typescript"
+    "typescript",
+    "deduplication",
+    "rate-limiting",
+    "breadcrumbs",
+    "error-handler"
   ],
-  "author": "",
+  "author": "Yuyutsu",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Yuyutsu/react-native-error-boundary-logger.git"
+  },
+  "homepage": "https://github.com/Yuyutsu/react-native-error-boundary-logger#readme",
+  "bugs": {
+    "url": "https://github.com/Yuyutsu/react-native-error-boundary-logger/issues"
+  },
+  "engines": {
+    "node": ">=16"
+  },
   "peerDependencies": {
     "react": ">=17.0.0",
     "react-native": ">=0.68.0"
